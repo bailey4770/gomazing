@@ -1,6 +1,63 @@
 package main
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"image/color"
+
+	"github.com/hajimehoshi/ebiten/v2"
+)
+
+type Tile struct {
+	img     *ebiten.Image
+	posX    float64
+	posY    float64
+	row     int
+	col     int
+	wallN   bool
+	wallE   bool
+	wallS   bool
+	wallW   bool
+	visited bool
+}
+
+type (
+	Grid [][]Tile
+)
+
+func createTile(g *game, posX, posY float64, row, col int) Tile {
+	var tile Tile
+	tile.img = ebiten.NewImage(g.cfg.tileSize, g.cfg.tileSize)
+
+	tile.img.Fill(color.RGBA{255, 255, 255, 255})
+
+	tile.posX = posX
+	tile.posY = posY
+	tile.row = row
+	tile.col = col
+	tile.wallN = true
+	tile.wallE = true
+	tile.wallS = true
+	tile.wallW = true
+	tile.visited = false
+	return tile
+}
+
+func (g *game) initGrid() {
+	// allocate row slices
+	g.grid = make(Grid, g.cfg.maxRows)
+
+	for row := range g.grid {
+		g.grid[row] = make([]Tile, g.cfg.maxCols)
+		posY := float64(row * g.cfg.tileSize)
+
+		for col := range g.grid[row] {
+			posX := float64(col * g.cfg.tileSize)
+			g.grid[row][col] = createTile(g, posX, posY, row, col)
+		}
+
+		g.wallImg = ebiten.NewImage(1, 1)
+		g.wallImg.Fill(color.White)
+	}
+}
 
 func (g *game) drawTileWalls(screen *ebiten.Image, t *Tile) {
 	tileSize := g.cfg.tileSize

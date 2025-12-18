@@ -1,114 +1,86 @@
 package main
 
 import (
-	"image/color"
+	"fmt"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-type Tile struct {
-	img     *ebiten.Image
-	posX    float64
-	posY    float64
-	row     int
-	col     int
-	wallN   bool
-	wallE   bool
-	wallS   bool
-	wallW   bool
-	visited bool
-}
-
-type (
-	Grid [][]Tile
-)
-
-func createTile(g *game, posX, posY float64, row, col int) Tile {
-	var tile Tile
-	tile.img = ebiten.NewImage(g.cfg.tileSize, g.cfg.tileSize)
-
-	tile.img.Fill(color.RGBA{255, 255, 255, 255})
-
-	tile.posX = posX
-	tile.posY = posY
-	tile.row = row
-	tile.col = col
-	tile.wallN = true
-	tile.wallE = true
-	tile.wallS = true
-	tile.wallW = true
-	tile.visited = false
-	return tile
-}
-
-func (g *game) initGrid() {
-	// allocate row slices
-	g.grid = make(Grid, g.cfg.maxRows)
-
-	for row := range g.grid {
-		g.grid[row] = make([]Tile, g.cfg.maxCols)
-		posY := float64(row * g.cfg.tileSize)
-
-		for col := range g.grid[row] {
-			posX := float64(col * g.cfg.tileSize)
-			g.grid[row][col] = createTile(g, posX, posY, row, col)
-		}
-
-		g.wallImg = ebiten.NewImage(1, 1)
-		g.wallImg.Fill(color.White)
+func createTile(g *game, posX, posY float64, row, col int) *Tile {
+	return &Tile{
+		PosX:    posX,
+		PosY:    posY,
+		Row:     row,
+		Col:     col,
+		WallN:   true,
+		WallE:   true,
+		WallS:   true,
+		WallW:   true,
+		Visited: false,
 	}
 }
 
 func (g *game) drawTileWalls(screen *ebiten.Image, t *Tile) {
 	tileSize := g.cfg.tileSize
-	wallThickness := 1
+	const wallThickness = 1
 
 	// tile.posX and tile.posY are already pixel coordinates
-	x := t.posX
-	y := t.posY
+	x, y := t.PosX, t.PosY
 
 	// NORTH wall
-	if t.wallN {
+	if t.WallN {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(tileSize), float64(wallThickness))
 		op.GeoM.Translate(x, y)
-		screen.DrawImage(g.wallImg, op)
+		screen.DrawImage(g.cfg.wallImg, op)
 	}
 
 	// SOUTH wall
-	if t.wallS {
+	if t.WallS {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(tileSize), float64(wallThickness))
 		op.GeoM.Translate(x, y+float64(tileSize-wallThickness))
-		screen.DrawImage(g.wallImg, op)
+		screen.DrawImage(g.cfg.wallImg, op)
 	}
 
 	// WEST wall
-	if t.wallW {
+	if t.WallW {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(wallThickness), float64(tileSize))
 		op.GeoM.Translate(x, y)
-		screen.DrawImage(g.wallImg, op)
+		screen.DrawImage(g.cfg.wallImg, op)
 	}
 
 	// EAST wall
-	if t.wallE {
+	if t.WallE {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(wallThickness), float64(tileSize))
 		op.GeoM.Translate(x+float64(tileSize-wallThickness), y)
-		screen.DrawImage(g.wallImg, op)
+		screen.DrawImage(g.cfg.wallImg, op)
 	}
 }
 
 func (g *game) Draw(screen *ebiten.Image) {
 	for row := 0; row < g.cfg.maxRows; row++ {
 		for col := 0; col < g.cfg.maxCols; col++ {
-			tile := &g.grid[row][col]
+			tile := g.grid[row][col]
 
 			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(tile.posX, tile.posY)
+			op.GeoM.Translate(tile.PosX, tile.PosY)
 
 			g.drawTileWalls(screen, tile)
 		}
 	}
+
+	// Display FPS and TPS
+	fps := ebiten.ActualFPS()
+	tps := ebiten.ActualTPS()
+	msg := fmt.Sprintf("FPS: %.2f\nTPS: %.2f\nFrontier: %d",
+		fps, tps, len(g.frontier))
+	ebitenutil.DebugPrintAt(screen, msg, 1, 1)
+}
+
+func (g *game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	return g.cfg.windowWidth, g.cfg.windowHeight
 }

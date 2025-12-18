@@ -1,130 +1,59 @@
 package main
 
 import (
+	"image/color"
 	"log"
 	"math/rand"
 
+	"github.com/bailey4770/gomazing/generators/prims"
+	"github.com/bailey4770/gomazing/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type config struct {
+type (
+	Tile = utils.Tile
+	Grid = utils.Grid
+)
+
+type Config struct {
 	windowWidth  int
 	windowHeight int
 	tileSize     int
 	maxRows      int
 	maxCols      int
+	wallImg      *ebiten.Image
 }
 
 type game struct {
 	initialised bool
-	cfg         *config
+	cfg         Config
 	grid        Grid
-	wallImg     *ebiten.Image
 	frontier    map[*Tile]struct{}
 }
 
-func (g *game) getRandomTile() *Tile {
-	// choose random tile from frontier list
-	randomIndex := rand.Intn(len(g.frontier))
-	i := 0
+func (g *game) initGrid() {
+	// allocate row slices
+	g.grid = make(Grid, g.cfg.maxRows)
+	g.cfg.wallImg.Fill(color.White)
 
-	for tile := range g.frontier {
-		if i == randomIndex {
-			return tile
-		}
-		i++
-	}
+	for row := range g.grid {
+		g.grid[row] = make([]*Tile, g.cfg.maxCols)
+		posY := float64(row * g.cfg.tileSize)
 
-	return nil
-}
-
-type Dir struct {
-	RowOffset int
-	ColOffset int
-}
-
-func (g *game) findNeighbours(row, col int) []*Tile {
-	dirs := []Dir{
-		{-1, 0},
-		{0, 1},
-		{1, 0},
-		{0, -1},
-	}
-
-	var neighbours []*Tile
-
-	for _, dir := range dirs {
-		newRow := row + dir.RowOffset
-		newCol := col + dir.ColOffset
-
-		if (newRow >= 0 && newRow < g.cfg.maxRows) && (newCol >= 0 && newCol < g.cfg.maxCols) {
-			neighbours = append(neighbours, &g.grid[newRow][newCol])
+		for col := range g.grid[row] {
+			posX := float64(col * g.cfg.tileSize)
+			g.grid[row][col] = createTile(g, posX, posY, row, col)
 		}
 	}
-
-	return neighbours
-}
-
-func (g *game) primsRecursive() {
-	frontierTile := g.getRandomTile()
-	delete(g.frontier, frontierTile)
-
-	neighbours := g.findNeighbours(frontierTile.row, frontierTile.col)
-	var visitedNeighbours []*Tile
-	for _, n := range neighbours {
-		if n.visited {
-			visitedNeighbours = append(visitedNeighbours, n)
-		} else if _, ok := g.frontier[n]; !ok {
-			g.frontier[n] = struct{}{}
-		}
-	}
-
-	if len(visitedNeighbours) == 0 {
-		return
-	}
-	// choose random tile from visited neighbours
-	randomIndex := rand.Intn(len(visitedNeighbours))
-	visitedTile := visitedNeighbours[randomIndex]
-
-	if visitedTile.col == frontierTile.col {
-		if frontierTile.row < visitedTile.row {
-			// visited is to the south
-			frontierTile.wallS = false
-			visitedTile.wallN = false
-		} else if visitedTile.row < frontierTile.row {
-			// visited to the north
-			frontierTile.wallN = false
-			visitedTile.wallS = false
-		} else {
-			log.Fatal(visitedTile, frontierTile)
-		}
-	} else if visitedTile.row == frontierTile.row {
-		if frontierTile.col < visitedTile.col {
-			// visited to west
-			frontierTile.wallE = false
-			visitedTile.wallW = false
-		} else if visitedTile.col < frontierTile.col {
-			// visited to east
-			frontierTile.wallW = false
-			visitedTile.wallE = false
-		} else {
-			log.Fatal(visitedTile, frontierTile)
-		}
-	} else {
-		log.Fatal(visitedTile, frontierTile)
-	}
-
-	frontierTile.visited = true
 }
 
 func (g *game) Update() error {
 	if !g.initialised {
-		row := 0
-		col := 0
+		randomRow := rand.Intn(len(g.grid))
+		start := utils.GetRandomTile(g.grid[randomRow])
 
-		start := &g.grid[row][col]
-		start.visited = true
-		neighbours := g.findNeighbours(row, col)
+		start.Visited = true
+		neighbours := utils.FindNeighbours(start, g.grid, g.cfg.maxRows, g.cfg.maxCols)
 
 		for _, n := range neighbours {
 			g.frontier[n] = struct{}{}
@@ -134,14 +63,10 @@ func (g *game) Update() error {
 	}
 
 	if len(g.frontier) > 0 {
-		g.primsRecursive()
+		g.frontier = prims.Iterate(g.frontier, g.grid, g.cfg.maxRows, g.cfg.maxCols)
 	}
 
 	return nil
-}
-
-func (g *game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return g.cfg.windowWidth, g.cfg.windowHeight
 }
 
 func main() {
@@ -149,19 +74,21 @@ func main() {
 	const windowHeight = 480
 	const tileSize = 20
 
-	cfg := config{
-		windowWidth,
-		windowHeight,
-		tileSize,
-		windowHeight / tileSize,
-		windowWidth / tileSize,
+	cfg := Config{
+		windowWidth:  windowWidth,
+		windowHeight: windowHeight,
+		tileSize:     tileSize,
+		maxRows:      windowHeight / tileSize,
+		maxCols:      windowWidth / tileSize,
+		wallImg:      ebiten.NewImage(1, 1),
 	}
+	// TODO since ebiten funcs are methods on game struct, create different game dependent on cli input.
+	// game stuct will contain name of algo and callback func to algo to be called from within Update method
 	game := &game{
-		false,
-		&cfg,
-		nil,
-		nil,
-		make(map[*Tile]struct{}),
+		initialised: false,
+		cfg:         cfg,
+		grid:        nil,
+		frontier:    make(map[*Tile]struct{}),
 	}
 	// create grid of tiles
 	game.initGrid()

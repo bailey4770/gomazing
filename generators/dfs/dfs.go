@@ -5,9 +5,12 @@ import (
 	"github.com/bailey4770/gomazing/utils"
 )
 
-type Tile = utils.Tile
+type (
+	Tile = utils.Tile
+	Grid = utils.Grid
+)
 
-func Iterate(stack []*Tile, visited map[*Tile]struct{}, curr *Tile, grid [][]*Tile, maxRows, maxCols int) ([]*Tile, map[*Tile]struct{}, *Tile) {
+func Iterate(stack []*Tile, visited map[*Tile]struct{}, curr *Tile, grid Grid, maxRows, maxCols int) ([]*Tile, map[*Tile]struct{}, *Tile) {
 	neighbours := utils.FindNeighbours(curr, grid, maxRows, maxCols)
 	var unvisitedNeighbours []*Tile
 	for _, n := range neighbours {

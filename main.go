@@ -9,6 +9,7 @@ import (
 	"github.com/bailey4770/gomazing/generators/prims"
 	"github.com/bailey4770/gomazing/utils"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type (
@@ -65,6 +66,24 @@ func (g *game) resetGrid() {
 	}
 }
 
+func (g *game) postPrimsReset() {
+	g.resetGrid()
+	g.prims = false
+	g.dfs = true
+	g.initialised = false
+	g.frontier = make(map[*Tile]struct{})
+	g.visited = make(map[*Tile]struct{})
+}
+
+func (g *game) postDfsReset() {
+	g.resetGrid()
+	g.prims = true
+	g.dfs = false
+	g.initialised = false
+	g.visited = make(map[*Tile]struct{})
+	g.frontier = make(map[*Tile]struct{})
+}
+
 func (g *game) Update() error {
 	if g.prims {
 		if !g.initialised {
@@ -86,14 +105,6 @@ func (g *game) Update() error {
 				g.frontier, g.visited = prims.Iterate(g.frontier, g.visited, g.grid, g.cfg.maxRows, g.cfg.maxCols)
 			}
 		}
-
-		if len(g.frontier) == 0 {
-			g.resetGrid()
-			g.prims = false
-			g.dfs = true
-			g.initialised = false
-		}
-
 	}
 
 	if g.dfs {
@@ -102,7 +113,6 @@ func (g *game) Update() error {
 			start := utils.GetRandomTile(g.grid[randomRow])
 
 			g.currentTile = start
-			g.visited = make(map[*Tile]struct{})
 			g.initialised = true
 		}
 
@@ -110,6 +120,14 @@ func (g *game) Update() error {
 			if len(g.visited) < len(g.grid)*len(g.grid[0]) {
 				g.stack, g.visited, g.currentTile = dfs.Iterate(g.stack, g.visited, g.currentTile, g.grid, g.cfg.maxRows, g.cfg.maxCols)
 			}
+		}
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyN) {
+		if g.prims {
+			g.postPrimsReset()
+		} else if g.dfs {
+			g.postDfsReset()
 		}
 	}
 

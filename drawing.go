@@ -9,15 +9,14 @@ import (
 
 func createTile(g *game, posX, posY float64, row, col int) *Tile {
 	return &Tile{
-		PosX:    posX,
-		PosY:    posY,
-		Row:     row,
-		Col:     col,
-		WallN:   true,
-		WallE:   true,
-		WallS:   true,
-		WallW:   true,
-		Visited: false,
+		PosX:  posX,
+		PosY:  posY,
+		Row:   row,
+		Col:   col,
+		WallN: true,
+		WallE: true,
+		WallS: true,
+		WallW: true,
 	}
 }
 
@@ -76,8 +75,8 @@ func (g *game) Draw(screen *ebiten.Image) {
 	// Display FPS and TPS
 	fps := ebiten.ActualFPS()
 	tps := ebiten.ActualTPS()
-	msg := fmt.Sprintf("FPS: %.2f\nTPS: %.2f\nFrontier: %d",
-		fps, tps, len(g.frontier))
+	msg := fmt.Sprintf("FPS: %.2f\nTPS: %.2f",
+		fps, tps)
 	ebitenutil.DebugPrintAt(screen, msg, 1, 1)
 }
 

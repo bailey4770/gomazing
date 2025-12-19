@@ -6,15 +6,14 @@ import (
 )
 
 type Tile struct {
-	PosX    float64
-	PosY    float64
-	Row     int
-	Col     int
-	WallN   bool
-	WallE   bool
-	WallS   bool
-	WallW   bool
-	Visited bool
+	PosX  float64
+	PosY  float64
+	Row   int
+	Col   int
+	WallN bool
+	WallE bool
+	WallS bool
+	WallW bool
 }
 
 type (
@@ -51,4 +50,33 @@ func FindNeighbours(t *Tile, grid Grid, maxRows, maxCols int) []*Tile {
 	}
 
 	return neighbours
+}
+
+func RemoveWalls(tile1 *Tile, tile2 *Tile) {
+	type wallPair struct {
+		frontierWall *bool
+		visitedWall  *bool
+	}
+	var walls wallPair
+
+	if tile2.Col == tile1.Col {
+		if tile1.Row < tile2.Row {
+			// visited is to the south
+			walls = wallPair{&tile1.WallS, &tile2.WallN}
+		} else if tile2.Row < tile1.Row {
+			// visited to the north
+			walls = wallPair{&tile1.WallN, &tile2.WallS}
+		}
+	} else if tile2.Row == tile1.Row {
+		if tile1.Col < tile2.Col {
+			// visited to west
+			walls = wallPair{&tile1.WallE, &tile2.WallW}
+		} else if tile2.Col < tile1.Col {
+			// visited to east
+			walls = wallPair{&tile1.WallW, &tile2.WallE}
+		}
+	}
+
+	*walls.frontierWall = false
+	*walls.visitedWall = false
 }

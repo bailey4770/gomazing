@@ -8,8 +8,8 @@ import (
 )
 
 func drawTileWalls(screen *ebiten.Image, cfg Config, t *Tile) {
-	tileSize := cfg.tileSize
-	wallThickness := cfg.wallThickness
+	tileSize := cfg.TileSize
+	wallThickness := cfg.WallThickness
 
 	// tile.posX and tile.posY are already pixel coordinates
 	x, y := t.PosX, t.PosY
@@ -19,7 +19,7 @@ func drawTileWalls(screen *ebiten.Image, cfg Config, t *Tile) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(tileSize), float64(wallThickness))
 		op.GeoM.Translate(x, y)
-		screen.DrawImage(cfg.wallImg, op)
+		screen.DrawImage(cfg.WallImg, op)
 	}
 
 	// SOUTH wall
@@ -27,7 +27,7 @@ func drawTileWalls(screen *ebiten.Image, cfg Config, t *Tile) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(tileSize), float64(wallThickness))
 		op.GeoM.Translate(x, y+float64(tileSize-wallThickness))
-		screen.DrawImage(cfg.wallImg, op)
+		screen.DrawImage(cfg.WallImg, op)
 	}
 
 	// WEST wall
@@ -35,7 +35,7 @@ func drawTileWalls(screen *ebiten.Image, cfg Config, t *Tile) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(wallThickness), float64(tileSize))
 		op.GeoM.Translate(x, y)
-		screen.DrawImage(cfg.wallImg, op)
+		screen.DrawImage(cfg.WallImg, op)
 	}
 
 	// EAST wall
@@ -43,13 +43,13 @@ func drawTileWalls(screen *ebiten.Image, cfg Config, t *Tile) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(wallThickness), float64(tileSize))
 		op.GeoM.Translate(x+float64(tileSize-wallThickness), y)
-		screen.DrawImage(cfg.wallImg, op)
+		screen.DrawImage(cfg.WallImg, op)
 	}
 }
 
 func (g *game) Draw(screen *ebiten.Image) {
-	for row := 0; row < g.cfg.maxRows; row++ {
-		for col := 0; col < g.cfg.maxCols; col++ {
+	for row := 0; row < g.cfg.MaxRows; row++ {
+		for col := 0; col < g.cfg.MaxCols; col++ {
 			tile := g.grid[row][col]
 
 			op := &ebiten.DrawImageOptions{}

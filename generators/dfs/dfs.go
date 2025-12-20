@@ -20,16 +20,19 @@ type mazeState struct {
 	maxCols int
 }
 
-func Initialise(grid Grid) *mazeState {
+func GetMazeState() *mazeState {
+	return &mazeState{
+		visited: make(map[*Tile]struct{}),
+	}
+}
+
+func (m *mazeState) Initialise(grid Grid) {
 	randomRow := rand.Intn(len(grid))
 	start := utils.GetRandomTile(grid[randomRow])
 
-	return &mazeState{
-		visited: make(map[*Tile]struct{}),
-		curr:    start,
-		maxRows: len(grid),
-		maxCols: len(grid[0]),
-	}
+	m.curr = start
+	m.maxRows = len(grid)
+	m.maxCols = len(grid[0])
 }
 
 func (m *mazeState) Iterate(grid Grid) {

@@ -19,27 +19,24 @@ type mazeState struct {
 	maxCols  int
 }
 
-func Initialise(grid Grid) *mazeState {
-	maxRows := len(grid)
-	maxCols := len(grid[0])
+func GetMazeState() *mazeState {
+	return &mazeState{
+		frontier: make(map[*Tile]struct{}),
+		visited:  make(map[*Tile]struct{}),
+	}
+}
+
+func (m *mazeState) Initialise(grid Grid) {
+	m.maxRows = len(grid)
+	m.maxCols = len(grid[0])
 
 	randomRow := rand.Intn(len(grid))
 	start := utils.GetRandomTile(grid[randomRow])
-	visited := map[*Tile]struct{}{
-		start: {},
-	}
+	m.visited[start] = struct{}{}
 
-	neighbours := utils.FindNeighbours(start, grid, maxRows, maxCols)
-	frontier := make(map[*Tile]struct{})
+	neighbours := utils.FindNeighbours(start, grid, m.maxRows, m.maxCols)
 	for _, n := range neighbours {
-		frontier[n] = struct{}{}
-	}
-
-	return &mazeState{
-		frontier: frontier,
-		visited:  visited,
-		maxRows:  maxRows,
-		maxCols:  maxCols,
+		m.frontier[n] = struct{}{}
 	}
 }
 

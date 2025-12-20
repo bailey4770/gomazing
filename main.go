@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/bailey4770/gomazing/generators/dfs"
+	"github.com/bailey4770/gomazing/generators/prims"
 	"github.com/bailey4770/gomazing/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -15,8 +16,6 @@ type (
 )
 
 type Config struct {
-	windowWidth   int
-	windowHeight  int
 	tileSize      int
 	wallThickness int
 	maxRows       int
@@ -28,6 +27,13 @@ type Config struct {
 type Generator interface {
 	Iterate(Grid)
 	IsComplete() bool
+}
+
+func getGenerators(grid Grid) map[string]Generator {
+	return map[string]Generator{
+		"prims": prims.Initialise(grid),
+		"dfs":   dfs.Initialise(grid),
+	}
 }
 
 type game struct {
@@ -73,8 +79,6 @@ func main() {
 	const wallThickness = 1
 
 	cfg := Config{
-		windowWidth:   windowWidth,
-		windowHeight:  windowHeight,
 		tileSize:      tileSize,
 		wallThickness: wallThickness,
 		maxRows:       windowHeight / tileSize,
@@ -83,13 +87,14 @@ func main() {
 		speed:         gameSpeed,
 	}
 	grid := initGrid(cfg)
+	generator := "dfs"
 	game := &game{
 		cfg:       cfg,
 		grid:      grid,
-		generator: dfs.Initialise(grid),
+		generator: getGenerators(grid)[generator],
 	}
 
-	ebiten.SetWindowSize(cfg.windowWidth, cfg.windowHeight)
+	ebiten.SetWindowSize(windowWidth, windowHeight)
 	ebiten.SetWindowTitle("Maze generation")
 
 	// Start game loop

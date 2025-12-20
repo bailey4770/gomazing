@@ -6,12 +6,19 @@ generation algorithms, and different path finding algorithms.
 
 ## Help
 
-- Press "n" to cycle through the maze generation algorithms
+- Type `gomazing -h` for commands.
 
 ## To Do
 
-- Add Kruskal generator
-- Add proper CLI
+- Generators to add:
+  - Recursive Backtracker
+  - Kruskal's
+  - Aldous-Broder
+  - Wilson's
+  - Hunt and Kill
+  - Eller's
+  - Binary Tree
+  - Sidewinder
 - Add maze saving function and loading function
   - Explore en/decoding options
 - Explore path finding algorithms to solve mazes

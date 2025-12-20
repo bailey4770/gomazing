@@ -59,12 +59,14 @@ func (g *game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Display FPS and TPS
-	fps := ebiten.ActualFPS()
-	tps := ebiten.ActualTPS()
-	msg := fmt.Sprintf("FPS: %.2f\nTPS: %.2f",
-		fps, tps)
-	ebitenutil.DebugPrintAt(screen, msg, 1, 1)
+	if g.cfg.ShowStats {
+		// Display FPS and TPS
+		fps := ebiten.ActualFPS()
+		tps := ebiten.ActualTPS()
+		msg := fmt.Sprintf("FPS: %.2f\nTPS: %.2f",
+			fps, tps)
+		ebitenutil.DebugPrintAt(screen, msg, 1, 1)
+	}
 }
 
 func (g *game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

@@ -33,6 +33,7 @@ func getGeneratorNames(generators map[string]Generator) []string {
 }
 
 type Config struct {
+	Generator     Generator
 	WindowWidth   int
 	WindowHeight  int
 	TileSize      int
@@ -42,12 +43,17 @@ type Config struct {
 	Speed         int
 	// size of *ebiten.Image == 8 == size of int
 	WallImg   *ebiten.Image
-	Generator Generator
+	ShowStats bool
 }
 
 func GetConfig() Config {
-	var windowWidth, windowHeight, tileSize, wallThickness, gameSpeed int
 	var generator string
+	var windowWidth, windowHeight, tileSize, wallThickness, gameSpeed int
+	var showStats bool
+
+	generators := GetGenerators()
+	generatorUsage := fmt.Sprintf("Input maze generation algorithm %v", getGeneratorNames(generators))
+	flag.StringVar(&generator, "gen", "prims", generatorUsage)
 
 	flag.IntVar(&windowWidth, "width", 640, "Input window width")
 	flag.IntVar(&windowHeight, "height", 480, "Input window height")
@@ -55,13 +61,11 @@ func GetConfig() Config {
 	flag.IntVar(&wallThickness, "wall", 1, "Input cell wall thickness")
 	flag.IntVar(&gameSpeed, "speed", 3, "Input game speed")
 
-	generators := GetGenerators()
-	generatorUsage := fmt.Sprintf("Input maze generation algorithm %v", getGeneratorNames(generators))
-	flag.StringVar(&generator, "gen", "prims", generatorUsage)
-
+	flag.BoolVar(&showStats, "debug", false, "Show FPS and TPS info")
 	flag.Parse()
 
 	return Config{
+		Generator:     generators[generator],
 		WindowWidth:   windowWidth,
 		WindowHeight:  windowHeight,
 		TileSize:      tileSize,
@@ -70,6 +74,6 @@ func GetConfig() Config {
 		MaxCols:       windowWidth / tileSize,
 		Speed:         gameSpeed,
 		WallImg:       ebiten.NewImage(1, 1),
-		Generator:     generators[generator],
+		ShowStats:     showStats,
 	}
 }

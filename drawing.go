@@ -7,22 +7,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-func createTile(g *game, posX, posY float64, row, col int) *Tile {
-	return &Tile{
-		PosX:  posX,
-		PosY:  posY,
-		Row:   row,
-		Col:   col,
-		WallN: true,
-		WallE: true,
-		WallS: true,
-		WallW: true,
-	}
-}
-
-func (g *game) drawTileWalls(screen *ebiten.Image, t *Tile) {
-	tileSize := g.cfg.tileSize
-	const wallThickness = 1
+func drawTileWalls(screen *ebiten.Image, cfg Config, t *Tile) {
+	tileSize := cfg.tileSize
+	wallThickness := cfg.wallThickness
 
 	// tile.posX and tile.posY are already pixel coordinates
 	x, y := t.PosX, t.PosY
@@ -32,7 +19,7 @@ func (g *game) drawTileWalls(screen *ebiten.Image, t *Tile) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(tileSize), float64(wallThickness))
 		op.GeoM.Translate(x, y)
-		screen.DrawImage(g.cfg.wallImg, op)
+		screen.DrawImage(cfg.wallImg, op)
 	}
 
 	// SOUTH wall
@@ -40,7 +27,7 @@ func (g *game) drawTileWalls(screen *ebiten.Image, t *Tile) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(tileSize), float64(wallThickness))
 		op.GeoM.Translate(x, y+float64(tileSize-wallThickness))
-		screen.DrawImage(g.cfg.wallImg, op)
+		screen.DrawImage(cfg.wallImg, op)
 	}
 
 	// WEST wall
@@ -48,7 +35,7 @@ func (g *game) drawTileWalls(screen *ebiten.Image, t *Tile) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(wallThickness), float64(tileSize))
 		op.GeoM.Translate(x, y)
-		screen.DrawImage(g.cfg.wallImg, op)
+		screen.DrawImage(cfg.wallImg, op)
 	}
 
 	// EAST wall
@@ -56,7 +43,7 @@ func (g *game) drawTileWalls(screen *ebiten.Image, t *Tile) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(float64(wallThickness), float64(tileSize))
 		op.GeoM.Translate(x+float64(tileSize-wallThickness), y)
-		screen.DrawImage(g.cfg.wallImg, op)
+		screen.DrawImage(cfg.wallImg, op)
 	}
 }
 
@@ -68,7 +55,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(tile.PosX, tile.PosY)
 
-			g.drawTileWalls(screen, tile)
+			drawTileWalls(screen, g.cfg, tile)
 		}
 	}
 

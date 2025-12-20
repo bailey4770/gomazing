@@ -16,9 +16,33 @@ type Tile struct {
 	WallW bool
 }
 
+func CreateTile(posX, posY float64, row, col int) *Tile {
+	return &Tile{
+		PosX:  posX,
+		PosY:  posY,
+		Row:   row,
+		Col:   col,
+		WallN: true,
+		WallE: true,
+		WallS: true,
+		WallW: true,
+	}
+}
+
 type (
 	Grid [][]*Tile
 )
+
+func (grid Grid) ResetGrid() {
+	for row := range grid {
+		for col := range grid[row] {
+			grid[row][col].WallN = true
+			grid[row][col].WallE = true
+			grid[row][col].WallS = true
+			grid[row][col].WallW = true
+		}
+	}
+}
 
 func GetRandomTile(tiles []*Tile) *Tile {
 	if len(tiles) == 0 {

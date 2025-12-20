@@ -3,13 +3,10 @@ package main
 import (
 	"image/color"
 	"log"
-	"math/rand"
 
 	"github.com/bailey4770/gomazing/generators/dfs"
-	"github.com/bailey4770/gomazing/generators/prims"
 	"github.com/bailey4770/gomazing/utils"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type (
@@ -18,116 +15,49 @@ type (
 )
 
 type Config struct {
-	windowWidth  int
-	windowHeight int
-	tileSize     int
-	maxRows      int
-	maxCols      int
-	wallImg      *ebiten.Image
-	speed        int
+	windowWidth   int
+	windowHeight  int
+	tileSize      int
+	wallThickness int
+	maxRows       int
+	maxCols       int
+	wallImg       *ebiten.Image
+	speed         int
+}
+
+type Generator interface {
+	Iterate(Grid)
+	IsComplete() bool
 }
 
 type game struct {
-	initialised bool
-	prims       bool
-	dfs         bool
-	cfg         Config
-	grid        Grid
-	frontier    map[*Tile]struct{}
-	stack       []*Tile
-	visited     map[*Tile]struct{}
-	currentTile *Tile
+	cfg       Config
+	grid      Grid
+	generator Generator
 }
 
-func (g *game) initGrid() {
+func initGrid(cfg Config) Grid {
 	// allocate row slices
-	g.grid = make(Grid, g.cfg.maxRows)
-	g.cfg.wallImg.Fill(color.White)
+	grid := make(Grid, cfg.maxRows)
+	cfg.wallImg.Fill(color.White)
 
-	for row := range g.grid {
-		g.grid[row] = make([]*Tile, g.cfg.maxCols)
-		posY := float64(row * g.cfg.tileSize)
+	for row := range grid {
+		grid[row] = make([]*Tile, cfg.maxCols)
+		posY := float64(row * cfg.tileSize)
 
-		for col := range g.grid[row] {
-			posX := float64(col * g.cfg.tileSize)
-			g.grid[row][col] = createTile(g, posX, posY, row, col)
+		for col := range grid[row] {
+			posX := float64(col * cfg.tileSize)
+			grid[row][col] = utils.CreateTile(posX, posY, row, col)
 		}
 	}
-}
 
-func (g *game) resetGrid() {
-	for row := range g.grid {
-		for col := range g.grid[row] {
-			g.grid[row][col].WallN = true
-			g.grid[row][col].WallE = true
-			g.grid[row][col].WallS = true
-			g.grid[row][col].WallW = true
-		}
-	}
-}
-
-func (g *game) postPrimsReset() {
-	g.resetGrid()
-	g.prims = false
-	g.dfs = true
-	g.initialised = false
-	g.frontier = make(map[*Tile]struct{})
-	g.visited = make(map[*Tile]struct{})
-}
-
-func (g *game) postDfsReset() {
-	g.resetGrid()
-	g.prims = true
-	g.dfs = false
-	g.initialised = false
-	g.visited = make(map[*Tile]struct{})
-	g.frontier = make(map[*Tile]struct{})
+	return grid
 }
 
 func (g *game) Update() error {
-	if g.prims {
-		if !g.initialised {
-			randomRow := rand.Intn(len(g.grid))
-			start := utils.GetRandomTile(g.grid[randomRow])
-
-			g.visited[start] = struct{}{}
-			neighbours := utils.FindNeighbours(start, g.grid, g.cfg.maxRows, g.cfg.maxCols)
-
-			for _, n := range neighbours {
-				g.frontier[n] = struct{}{}
-			}
-
-			g.initialised = true
-		}
-
-		for range g.cfg.speed {
-			if len(g.frontier) > 0 {
-				g.frontier, g.visited = prims.Iterate(g.frontier, g.visited, g.grid, g.cfg.maxRows, g.cfg.maxCols)
-			}
-		}
-	}
-
-	if g.dfs {
-		if !g.initialised {
-			randomRow := rand.Intn(len(g.grid))
-			start := utils.GetRandomTile(g.grid[randomRow])
-
-			g.currentTile = start
-			g.initialised = true
-		}
-
-		for range g.cfg.speed {
-			if len(g.visited) < len(g.grid)*len(g.grid[0]) {
-				g.stack, g.visited, g.currentTile = dfs.Iterate(g.stack, g.visited, g.currentTile, g.grid, g.cfg.maxRows, g.cfg.maxCols)
-			}
-		}
-	}
-
-	if inpututil.IsKeyJustPressed(ebiten.KeyN) {
-		if g.prims {
-			g.postPrimsReset()
-		} else if g.dfs {
-			g.postDfsReset()
+	for range g.cfg.speed {
+		if !g.generator.IsComplete() {
+			g.generator.Iterate(g.grid)
 		}
 	}
 
@@ -135,33 +65,29 @@ func (g *game) Update() error {
 }
 
 func main() {
+	// Set up ebiten game
 	const windowWidth = 640
 	const windowHeight = 480
 	const tileSize = 20
 	const gameSpeed = 3
+	const wallThickness = 1
 
 	cfg := Config{
-		windowWidth:  windowWidth,
-		windowHeight: windowHeight,
-		tileSize:     tileSize,
-		maxRows:      windowHeight / tileSize,
-		maxCols:      windowWidth / tileSize,
-		wallImg:      ebiten.NewImage(1, 1),
-		speed:        gameSpeed,
+		windowWidth:   windowWidth,
+		windowHeight:  windowHeight,
+		tileSize:      tileSize,
+		wallThickness: wallThickness,
+		maxRows:       windowHeight / tileSize,
+		maxCols:       windowWidth / tileSize,
+		wallImg:       ebiten.NewImage(1, 1),
+		speed:         gameSpeed,
 	}
-	// TODO since ebiten funcs are methods on game struct, create different game dependent on cli input.
-	// game stuct will contain name of algo and callback func to algo to be called from within Update method
+	grid := initGrid(cfg)
 	game := &game{
-		initialised: false,
-		prims:       true,
-		dfs:         false,
-		cfg:         cfg,
-		grid:        nil,
-		frontier:    make(map[*Tile]struct{}),
-		visited:     make(map[*Tile]struct{}),
+		cfg:       cfg,
+		grid:      grid,
+		generator: dfs.Initialise(grid),
 	}
-	// create grid of tiles
-	game.initGrid()
 
 	ebiten.SetWindowSize(cfg.windowWidth, cfg.windowHeight)
 	ebiten.SetWindowTitle("Maze generation")

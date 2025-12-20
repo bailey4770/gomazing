@@ -2,6 +2,8 @@
 package dfs
 
 import (
+	"math/rand"
+
 	"github.com/bailey4770/gomazing/utils"
 )
 
@@ -10,29 +12,48 @@ type (
 	Grid = utils.Grid
 )
 
-func Iterate(stack []*Tile, visited map[*Tile]struct{}, curr *Tile, grid Grid, maxRows, maxCols int) ([]*Tile, map[*Tile]struct{}, *Tile) {
-	neighbours := utils.FindNeighbours(curr, grid, maxRows, maxCols)
+type mazeState struct {
+	stack   []*Tile
+	visited map[*Tile]struct{}
+	curr    *Tile
+	maxRows int
+	maxCols int
+}
+
+func Initialise(grid Grid) *mazeState {
+	randomRow := rand.Intn(len(grid))
+	start := utils.GetRandomTile(grid[randomRow])
+
+	return &mazeState{
+		visited: make(map[*Tile]struct{}),
+		curr:    start,
+		maxRows: len(grid),
+		maxCols: len(grid[0]),
+	}
+}
+
+func (m *mazeState) Iterate(grid Grid) {
+	neighbours := utils.FindNeighbours(m.curr, grid, m.maxRows, m.maxCols)
 	var unvisitedNeighbours []*Tile
 	for _, n := range neighbours {
-		if _, ok := visited[n]; !ok {
+		if _, ok := m.visited[n]; !ok {
 			unvisitedNeighbours = append(unvisitedNeighbours, n)
 		}
 	}
 
 	if len(unvisitedNeighbours) > 0 {
 		randUnvisited := utils.GetRandomTile(unvisitedNeighbours)
-		stack = append(stack, curr)
-		utils.RemoveWalls(curr, randUnvisited)
+		m.stack = append(m.stack, m.curr)
+		utils.RemoveWalls(m.curr, randUnvisited)
 
-		visited[randUnvisited] = struct{}{}
-		curr = randUnvisited
-		return stack, visited, curr
-
-	} else if len(stack) > 0 {
-		curr = stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		return stack, visited, curr
+		m.visited[randUnvisited] = struct{}{}
+		m.curr = randUnvisited
+	} else if len(m.stack) > 0 {
+		m.curr = m.stack[len(m.stack)-1]
+		m.stack = m.stack[:len(m.stack)-1]
 	}
+}
 
-	return stack, visited, nil
+func (m *mazeState) IsComplete() bool {
+	return len(m.visited) >= m.maxRows*m.maxCols
 }

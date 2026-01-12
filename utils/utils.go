@@ -2,6 +2,7 @@
 package utils
 
 import (
+	"errors"
 	"math/rand"
 )
 
@@ -44,14 +45,14 @@ func (grid Grid) ResetGrid() {
 	}
 }
 
-func GetRandomTile(tiles []*Tile) *Tile {
+func GetRandomTile(tiles []*Tile) (*Tile, int, error) {
 	if len(tiles) == 0 {
-		return nil
+		return nil, 0, errors.New("length of slice is 0")
 	}
 
 	// choose random tile from frontier list
 	randomIndex := rand.Intn(len(tiles))
-	return tiles[randomIndex]
+	return tiles[randomIndex], randomIndex, nil
 }
 
 func FindNeighbours(t *Tile, grid Grid, maxRows, maxCols int) []*Tile {

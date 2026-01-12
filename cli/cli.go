@@ -12,8 +12,8 @@ import (
 )
 
 type Generator interface {
-	Initialise(utils.Grid)
-	Iterate(utils.Grid)
+	Initialise(utils.Grid) error
+	Iterate(utils.Grid) error
 	IsComplete() bool
 }
 

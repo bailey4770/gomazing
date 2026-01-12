@@ -1,4 +1,4 @@
-// Package dfs runs one iteration of the dfs maze generation algorithm
+// Package dfs runs one iteration of the dfs maze generation algorithm. Add GetMazeState() func to cli to include in program
 package dfs
 
 import (
@@ -26,16 +26,21 @@ func GetMazeState() *mazeState {
 	}
 }
 
-func (m *mazeState) Initialise(grid Grid) {
+func (m *mazeState) Initialise(grid Grid) error {
 	randomRow := rand.Intn(len(grid))
-	start := utils.GetRandomTile(grid[randomRow])
+	start, _, err := utils.GetRandomTile(grid[randomRow])
+	if err != nil {
+		return err
+	}
 
 	m.curr = start
 	m.maxRows = len(grid)
 	m.maxCols = len(grid[0])
+
+	return nil
 }
 
-func (m *mazeState) Iterate(grid Grid) {
+func (m *mazeState) Iterate(grid Grid) error {
 	neighbours := utils.FindNeighbours(m.curr, grid, m.maxRows, m.maxCols)
 	var unvisitedNeighbours []*Tile
 	for _, n := range neighbours {
@@ -45,7 +50,11 @@ func (m *mazeState) Iterate(grid Grid) {
 	}
 
 	if len(unvisitedNeighbours) > 0 {
-		randUnvisited := utils.GetRandomTile(unvisitedNeighbours)
+		randUnvisited, _, err := utils.GetRandomTile(unvisitedNeighbours)
+		if err != nil {
+			return err
+		}
+
 		m.stack = append(m.stack, m.curr)
 		utils.RemoveWalls(m.curr, randUnvisited)
 
@@ -55,6 +64,8 @@ func (m *mazeState) Iterate(grid Grid) {
 		m.curr = m.stack[len(m.stack)-1]
 		m.stack = m.stack[:len(m.stack)-1]
 	}
+
+	return nil
 }
 
 func (m *mazeState) IsComplete() bool {

@@ -43,7 +43,10 @@ func initGrid(cfg Config) Grid {
 func (g *game) Update() error {
 	for range g.cfg.Speed {
 		if !g.generator.IsComplete() {
-			g.generator.Iterate(g.grid)
+			err := g.generator.Iterate(g.grid)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -59,7 +62,10 @@ func main() {
 		grid:      grid,
 		generator: cfg.Generator,
 	}
-	game.generator.Initialise(grid)
+	err := game.generator.Initialise(grid)
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
 
 	ebiten.SetWindowSize(cfg.WindowWidth, cfg.WindowHeight)
 	ebiten.SetWindowTitle("Maze generation")

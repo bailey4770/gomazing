@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bailey4770/gomazing/generators/dfs"
+	"github.com/bailey4770/gomazing/generators/kruskals"
 	"github.com/bailey4770/gomazing/generators/prims"
 	"github.com/bailey4770/gomazing/utils"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -19,15 +20,16 @@ type Generator interface {
 
 func GetGenerators() map[string]Generator {
 	return map[string]Generator{
-		"prims": prims.GetMazeState(),
-		"dfs":   dfs.GetMazeState(),
+		"prims":    prims.GetMazeState(),
+		"dfs":      dfs.GetMazeState(),
+		"kruskals": kruskals.GetMazeState(),
 	}
 }
 
 func getGeneratorNames(generators map[string]Generator) []string {
 	var names []string
-	for k := range generators {
-		names = append(names, k)
+	for name := range generators {
+		names = append(names, name)
 	}
 	return names
 }

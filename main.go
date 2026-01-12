@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 
@@ -20,6 +21,7 @@ type game struct {
 	cfg       Config
 	grid      Grid
 	generator Generator
+	complete  bool
 }
 
 func initGrid(cfg Config) Grid {
@@ -47,6 +49,9 @@ func (g *game) Update() error {
 			if err != nil {
 				return err
 			}
+		} else if !g.complete {
+			fmt.Println("maze complete")
+			g.complete = true
 		}
 	}
 
@@ -61,6 +66,7 @@ func main() {
 		cfg:       cfg,
 		grid:      grid,
 		generator: cfg.Generator,
+		complete:  false,
 	}
 	err := game.generator.Initialise(grid)
 	if err != nil {

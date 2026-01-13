@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 
 	"github.com/bailey4770/gomazing/cli"
 	"github.com/bailey4770/gomazing/mazesave"
 	"github.com/bailey4770/gomazing/utils"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type (
@@ -18,10 +20,12 @@ type (
 )
 
 type game struct {
-	cfg       Config
-	grid      Grid
-	generator Generator
-	complete  bool
+	cfg        Config
+	grid       Grid
+	generator  Generator
+	complete   bool
+	isTyping   bool
+	nameBuffer []rune
 }
 
 func initGrid(cfg Config) Grid {
@@ -46,6 +50,34 @@ func (g *game) Update() error {
 		return nil
 	}
 
+	// Must come before "press S" check otherwise s added to input buffer
+	if g.isTyping {
+		g.nameBuffer = ebiten.AppendInputChars(g.nameBuffer)
+
+		if inpututil.IsKeyJustPressed(ebiten.KeyBackspace) && len(g.nameBuffer) > 0 {
+			g.nameBuffer = g.nameBuffer[:len(g.nameBuffer)-1]
+		}
+
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+			log.Print("Saving maze...")
+
+			saveDir, err := cli.GetSaveDir()
+			if err != nil {
+				return fmt.Errorf("could not get save dir: %v", err)
+			}
+
+			fileName := string(g.nameBuffer)
+			filePath := filepath.Join(saveDir, fileName)
+
+			if err = mazesave.SaveMaze(g.grid, g.cfg.TileSize, filePath); err != nil {
+				return fmt.Errorf("could not save maze: %v", err)
+			}
+
+			log.Print("Maze successfully saved")
+			g.isTyping = false
+		}
+	}
+
 	for range g.cfg.Speed {
 		if !g.generator.IsComplete() {
 			err := g.generator.Iterate(g.grid)
@@ -53,23 +85,16 @@ func (g *game) Update() error {
 				return err
 			}
 		} else if !g.complete {
-			fmt.Println("maze complete")
+			log.Print("maze complete")
 			g.complete = true
 		}
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyS) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyS) {
 		if !g.generator.IsComplete() {
 			log.Print("Error: wait until the maze has finished generating.")
 		} else {
-			log.Print("Saving maze...")
-
-			fileName := "test.maze"
-
-			err := mazesave.SaveMaze(g.grid, g.cfg.TileSize, fileName)
-			if err != nil {
-				return fmt.Errorf("could not save maze: %v", err)
-			}
+			g.isTyping = true
 		}
 	}
 
@@ -78,13 +103,18 @@ func (g *game) Update() error {
 
 func main() {
 	// Set up ebiten game
-	cfg := cli.GetConfig()
+	cfg, err := cli.GetConfig()
+	if err != nil {
+		log.Fatalf("Error getting config: %v", err)
+	}
+
 	grid := initGrid(cfg)
 	game := &game{
 		cfg:       cfg,
 		grid:      grid,
 		generator: cfg.Generator,
 		complete:  false,
+		isTyping:  false,
 	}
 
 	if game.generator != nil {

@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	textv2 "github.com/hajimehoshi/ebiten/v2/text/v2"
+	"golang.org/x/image/font/basicfont"
 )
 
 func drawTileWalls(screen *ebiten.Image, cfg Config, t *Tile) {
@@ -66,6 +69,28 @@ func (g *game) Draw(screen *ebiten.Image) {
 		msg := fmt.Sprintf("FPS: %.2f\nTPS: %.2f",
 			fps, tps)
 		ebitenutil.DebugPrintAt(screen, msg, 1, 1)
+	}
+
+	if g.isTyping {
+		msg := "Enter maze name: " + string(g.nameBuffer)
+
+		face := textv2.NewGoXFace(basicfont.Face7x13)
+		textWidth, textHeight := textv2.Measure(msg, face, 0)
+
+		paddingX, paddingY := 10.0, 10.0
+		rect := ebiten.NewImage(int(textWidth)+int(2*paddingX), int(textHeight)+int(2*paddingY))
+		rect.Fill(color.RGBA{0, 0, 0, 255})
+
+		rectOpts := &ebiten.DrawImageOptions{}
+		rectX, rectY := 20.0, 10.0
+		rectOpts.GeoM.Translate(rectX, rectY)
+		screen.DrawImage(rect, rectOpts)
+
+		var textOpts textv2.DrawOptions
+		textOpts.GeoM.Translate(20, 20)
+		textOpts.ColorScale.ScaleWithColor(color.White)
+
+		textv2.Draw(screen, msg, face, &textOpts)
 	}
 }
 

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/bailey4770/gomazing/generators/dfs"
 	"github.com/bailey4770/gomazing/generators/kruskals"
@@ -36,15 +38,15 @@ type Config struct {
 	MazePath  string
 }
 
-func GetConfig() Config {
-	var generatorName, mazePath string
+func GetConfig() (Config, error) {
+	var generatorName, mazeName string
 	var numRows, numCols, tileSize, wallThickness, gameSpeed int
 	var showStats bool
 
 	generators := GetGenerators()
 	generatorUsage := fmt.Sprintf("Mutually exclusive with load. Input maze generation algorithm %v", getGeneratorNames(generators))
 	flag.StringVar(&generatorName, "gen", "prims", generatorUsage)
-	flag.StringVar(&mazePath, "load", "", "Mutually exclusive with gen. Load a saved maze from file")
+	flag.StringVar(&mazeName, "load", "", "Mutually exclusive with gen. Load a saved maze from file")
 	// TODO: usage for load prints available mazes to load
 
 	flag.IntVar(&numRows, "rows", 24, "Input number of rows")
@@ -59,6 +61,12 @@ func GetConfig() Config {
 	wallImg := ebiten.NewImage(1, 1)
 	wallImg.Fill(color.White)
 
+	saveDir, err := GetSaveDir()
+	if err != nil {
+		return Config{}, fmt.Errorf("could not get save dir: %v", err)
+	}
+
+	mazePath := filepath.Join(saveDir, mazeName)
 	loadFlagged := checkFlags(mazePath)
 
 	var generator Generator
@@ -70,7 +78,7 @@ func GetConfig() Config {
 		var err error
 		numRows, numCols, tileSize, err = mazesave.GetMazeDimensions(mazePath)
 		if err != nil {
-			log.Fatalf("could not load maze dimensions from file: %v", err)
+			return Config{}, fmt.Errorf("could not load maze dimensions from file: %v", err)
 		}
 	}
 
@@ -88,7 +96,26 @@ func GetConfig() Config {
 		WallImg:       wallImg,
 		ShowStats:     showStats,
 		MazePath:      mazePath,
+	}, nil
+}
+
+func GetSaveDir() (string, error) {
+	baseDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("could not get user config dir: %v", err)
 	}
+
+	saveDir := filepath.Join(baseDir, "gomazing", "saved")
+
+	if _, err := os.Stat(saveDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(saveDir, 0o700); err != nil {
+			return "", fmt.Errorf("could not create save dir: %v", err)
+		}
+	} else if err != nil {
+		return "", fmt.Errorf("could not get dir stats: %v", err)
+	}
+
+	return saveDir, nil
 }
 
 func getWindowDimensions(numRows, numCols, tileSize int) (int, int) {

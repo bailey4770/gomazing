@@ -10,6 +10,7 @@ import (
 	"github.com/bailey4770/gomazing/generators/dfs"
 	"github.com/bailey4770/gomazing/generators/kruskals"
 	"github.com/bailey4770/gomazing/generators/prims"
+	"github.com/bailey4770/gomazing/mazesave"
 	"github.com/bailey4770/gomazing/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -18,22 +19,6 @@ type Generator interface {
 	Initialise(utils.Grid) error
 	Iterate(utils.Grid) error
 	IsComplete() bool
-}
-
-func GetGenerators() map[string]Generator {
-	return map[string]Generator{
-		"prims":    prims.GetMazeState(),
-		"dfs":      dfs.GetMazeState(),
-		"kruskals": kruskals.GetMazeState(),
-	}
-}
-
-func getGeneratorNames(generators map[string]Generator) []string {
-	var names []string
-	for name := range generators {
-		names = append(names, name)
-	}
-	return names
 }
 
 type Config struct {
@@ -48,6 +33,7 @@ type Config struct {
 	// size of *ebiten.Image == 8 == size of int
 	WallImg   *ebiten.Image
 	ShowStats bool
+	MazePath  string
 }
 
 func GetConfig() Config {
@@ -73,7 +59,6 @@ func GetConfig() Config {
 	wallImg := ebiten.NewImage(1, 1)
 	wallImg.Fill(color.White)
 
-	windowHeight, windowWidth := getWindowDimensions(numRows, numCols, tileSize)
 	loadFlagged := checkFlags(mazePath)
 
 	var generator Generator
@@ -81,7 +66,15 @@ func GetConfig() Config {
 		generator = generators[generatorName]
 	} else {
 		generator = nil
+
+		var err error
+		numRows, numCols, tileSize, err = mazesave.GetMazeDimensions(mazePath)
+		if err != nil {
+			log.Fatalf("could not load maze dimensions from file: %v", err)
+		}
 	}
+
+	windowHeight, windowWidth := getWindowDimensions(numRows, numCols, tileSize)
 
 	return Config{
 		Generator:     generator,
@@ -94,6 +87,7 @@ func GetConfig() Config {
 		Speed:         gameSpeed,
 		WallImg:       wallImg,
 		ShowStats:     showStats,
+		MazePath:      mazePath,
 	}
 }
 
@@ -104,6 +98,7 @@ func getWindowDimensions(numRows, numCols, tileSize int) (int, int) {
 func checkFlags(mazePath string) bool {
 	loadFlagged := false
 	genFlagged := false
+
 	flag.Visit(func(f *flag.Flag) {
 		switch f.Name {
 		case "load":
@@ -122,4 +117,20 @@ func checkFlags(mazePath string) bool {
 	}
 
 	return loadFlagged
+}
+
+func GetGenerators() map[string]Generator {
+	return map[string]Generator{
+		"prims":    prims.GetMazeState(),
+		"dfs":      dfs.GetMazeState(),
+		"kruskals": kruskals.GetMazeState(),
+	}
+}
+
+func getGeneratorNames(generators map[string]Generator) []string {
+	var names []string
+	for name := range generators {
+		names = append(names, name)
+	}
+	return names
 }

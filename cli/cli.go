@@ -4,6 +4,7 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"image/color"
 
 	"github.com/bailey4770/gomazing/generators/dfs"
 	"github.com/bailey4770/gomazing/generators/kruskals"
@@ -66,6 +67,9 @@ func GetConfig() Config {
 	flag.BoolVar(&showStats, "debug", false, "Show FPS and TPS info")
 	flag.Parse()
 
+	wallImg := ebiten.NewImage(1, 1)
+	wallImg.Fill(color.White)
+
 	return Config{
 		Generator:     generators[generator],
 		WindowWidth:   windowWidth,
@@ -75,7 +79,7 @@ func GetConfig() Config {
 		MaxRows:       windowHeight / tileSize,
 		MaxCols:       windowWidth / tileSize,
 		Speed:         gameSpeed,
-		WallImg:       ebiten.NewImage(1, 1),
+		WallImg:       wallImg,
 		ShowStats:     showStats,
 	}
 }

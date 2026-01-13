@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"image/color"
 	"log"
 
 	"github.com/bailey4770/gomazing/cli"
@@ -27,7 +26,6 @@ type game struct {
 func initGrid(cfg Config) Grid {
 	// allocate row slices
 	grid := make(Grid, cfg.MaxRows)
-	cfg.WallImg.Fill(color.White)
 
 	for row := range grid {
 		grid[row] = make([]*Tile, cfg.MaxCols)

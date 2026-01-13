@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"image/color"
+	"log"
 
 	"github.com/bailey4770/gomazing/generators/dfs"
 	"github.com/bailey4770/gomazing/generators/kruskals"
@@ -50,17 +51,19 @@ type Config struct {
 }
 
 func GetConfig() Config {
-	var generator string
-	var windowWidth, windowHeight, tileSize, wallThickness, gameSpeed int
+	var generatorName, mazePath string
+	var numRows, numCols, tileSize, wallThickness, gameSpeed int
 	var showStats bool
 
 	generators := GetGenerators()
-	generatorUsage := fmt.Sprintf("Input maze generation algorithm %v", getGeneratorNames(generators))
-	flag.StringVar(&generator, "gen", "prims", generatorUsage)
+	generatorUsage := fmt.Sprintf("Mutually exclusive with load. Input maze generation algorithm %v", getGeneratorNames(generators))
+	flag.StringVar(&generatorName, "gen", "prims", generatorUsage)
+	flag.StringVar(&mazePath, "load", "", "Mutually exclusive with gen. Load a saved maze from file")
+	// TODO: usage for load prints available mazes to load
 
-	flag.IntVar(&windowWidth, "width", 640, "Input window width")
-	flag.IntVar(&windowHeight, "height", 480, "Input window height")
-	flag.IntVar(&tileSize, "tile", 20, "Input tile size")
+	flag.IntVar(&numRows, "rows", 24, "Input number of rows")
+	flag.IntVar(&numCols, "cols", 32, "Input number of cols")
+	flag.IntVar(&tileSize, "tile", 20, "Input desired size of each tile")
 	flag.IntVar(&wallThickness, "wall", 1, "Input cell wall thickness")
 	flag.IntVar(&gameSpeed, "speed", 3, "Input game speed")
 
@@ -70,16 +73,53 @@ func GetConfig() Config {
 	wallImg := ebiten.NewImage(1, 1)
 	wallImg.Fill(color.White)
 
+	windowHeight, windowWidth := getWindowDimensions(numRows, numCols, tileSize)
+	loadFlagged := checkFlags(mazePath)
+
+	var generator Generator
+	if !loadFlagged {
+		generator = generators[generatorName]
+	} else {
+		generator = nil
+	}
+
 	return Config{
-		Generator:     generators[generator],
+		Generator:     generator,
 		WindowWidth:   windowWidth,
 		WindowHeight:  windowHeight,
-		TileSize:      tileSize,
+		TileSize:      windowHeight / numRows,
 		WallThickness: wallThickness,
-		MaxRows:       windowHeight / tileSize,
-		MaxCols:       windowWidth / tileSize,
+		MaxRows:       numRows,
+		MaxCols:       numCols,
 		Speed:         gameSpeed,
 		WallImg:       wallImg,
 		ShowStats:     showStats,
 	}
+}
+
+func getWindowDimensions(numRows, numCols, tileSize int) (int, int) {
+	return numRows * tileSize, numCols * tileSize
+}
+
+func checkFlags(mazePath string) bool {
+	loadFlagged := false
+	genFlagged := false
+	flag.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "load":
+			if mazePath == "" {
+				log.Fatal("Error: must provide maze file name")
+			}
+			loadFlagged = true
+
+		case "gen":
+			genFlagged = true
+		}
+	})
+
+	if loadFlagged && genFlagged {
+		log.Fatal("Error: cannot gen and load a maze. Commands are mutually exclusive.")
+	}
+
+	return loadFlagged
 }

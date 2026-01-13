@@ -66,8 +66,12 @@ func main() {
 		generator: cfg.Generator,
 		complete:  false,
 	}
-	err := game.generator.Initialise(grid)
-	if err != nil {
+
+	if game.generator == nil {
+		log.Fatal("Error: generator is nil. TODO: implement load command")
+	}
+
+	if err := game.generator.Initialise(grid); err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 

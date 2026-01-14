@@ -46,8 +46,14 @@ func GetConfig() (Config, error) {
 	generators := GetGenerators()
 	generatorUsage := fmt.Sprintf("Mutually exclusive with load. Input maze generation algorithm %v", getGeneratorNames(generators))
 	flag.StringVar(&generatorName, "gen", "prims", generatorUsage)
-	flag.StringVar(&mazeName, "load", "", "Mutually exclusive with gen. Load a saved maze from file")
-	// TODO: usage for load prints available mazes to load
+
+	mazeNames, err := getSavedMazes()
+	if err != nil {
+		return Config{}, fmt.Errorf("could not list saved mazes: %v", err)
+	}
+
+	loadUsage := fmt.Sprintf("Mutually exclusive with gen. Load a saved maze from file %v", mazeNames)
+	flag.StringVar(&mazeName, "load", "", loadUsage)
 
 	flag.IntVar(&numRows, "rows", 24, "Input number of rows")
 	flag.IntVar(&numCols, "cols", 32, "Input number of cols")
@@ -160,4 +166,23 @@ func getGeneratorNames(generators map[string]Generator) []string {
 		names = append(names, name)
 	}
 	return names
+}
+
+func getSavedMazes() ([]string, error) {
+	saveDir, err := GetSaveDir()
+	if err != nil {
+		return []string{}, err
+	}
+
+	mazes, err := os.ReadDir(saveDir)
+	if err != nil {
+		return []string{}, fmt.Errorf("could not read dir %s: %v", saveDir, err)
+	}
+
+	var mazeNames []string
+	for _, maze := range mazes {
+		mazeNames = append(mazeNames, maze.Name())
+	}
+
+	return mazeNames, nil
 }

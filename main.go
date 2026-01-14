@@ -1,8 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/bailey4770/gomazing/cli"
@@ -68,6 +71,13 @@ func (g *game) Update() error {
 
 			fileName := string(g.nameBuffer)
 			filePath := filepath.Join(saveDir, fileName)
+
+			if _, err := os.Stat(filePath); err == nil {
+				log.Printf("file with name %s already exists", fileName)
+				return nil
+			} else if !errors.Is(err, fs.ErrNotExist) {
+				return fmt.Errorf("file does not exist, but there was some other error: %v", err)
+			}
 
 			if err = mazesave.SaveMaze(g.grid, g.cfg.TileSize, filePath); err != nil {
 				return fmt.Errorf("could not save maze: %v", err)
